@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -89,5 +90,52 @@ class ImageCaptureService {
     } catch (e) {
       debugPrint('Error cleaning up old images: $e');
     }
+  }
+  
+  /// Gets all captured images from the directory
+  static Future<List<File>> getAllCapturedImages({
+    String? customDirectory,
+  }) async {
+    try {
+      final directory = await _getImageDirectory(customDirectory);
+      final files = directory.listSync();
+      return files.whereType<File>().toList();
+    } catch (e) {
+      debugPrint('Error getting captured images: $e');
+      return [];
+    }
+  }
+  
+  /// Converts image file to base64 string for backend upload
+  static Future<String?> imageToBase64(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      return base64Encode(bytes);
+    } catch (e) {
+      debugPrint('Error converting image to base64: $e');
+      return null;
+    }
+  }
+  
+  /// Gets image metadata (rule, timestamp) from filename
+  static Map<String, dynamic>? getImageMetadata(String filePath) {
+    try {
+      final fileName = filePath.split('/').last;
+      final parts = fileName.split('_');
+      if (parts.length >= 2) {
+        final ruleName = parts[0];
+        final timestamp = int.tryParse(parts[1].split('.').first);
+        
+        return {
+          'rule': ruleName,
+          'timestamp': timestamp,
+          'dateTime': timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null,
+          'filePath': filePath,
+        };
+      }
+    } catch (e) {
+      debugPrint('Error parsing image metadata: $e');
+    }
+    return null;
   }
 }

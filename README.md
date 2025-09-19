@@ -294,10 +294,11 @@ FaceDetectorView(
 
 ### Image Capture Service
 
-The package includes a built-in `ImageCaptureService` for saving captured images:
+The package includes a built-in `ImageCaptureService` for managing captured images:
 
 ```dart
 import 'package:facelivenessdetection/facelivenessdetection.dart';
+import 'dart:io';
 
 // Save image with custom directory
 final String? imagePath = await ImageCaptureService.captureImageForRule(
@@ -305,7 +306,102 @@ final String? imagePath = await ImageCaptureService.captureImageForRule(
   rule: Rulesets.smiling,
   customDirectory: '/custom/path',
 );
+
+// Get all captured images
+final List<File> images = await ImageCaptureService.getAllCapturedImages();
+
+// Convert image to base64 for backend upload
+final String? base64Image = await ImageCaptureService.imageToBase64(imageFile);
+
+// Get image metadata
+final Map<String, dynamic>? metadata = ImageCaptureService.getImageMetadata(imagePath);
+// Returns: {'rule': 'smile', 'timestamp': 1234567890, 'dateTime': DateTime(...), 'filePath': '...'}
+
+// Clean up old images (older than 7 days)
+await ImageCaptureService.cleanupOldImages(maxAgeInDays: 7);
 ```
+
+### Backend Integration
+
+Here's how to integrate captured images with your backend:
+
+```dart
+class FaceVerificationService {
+  // Upload all captured images to backend
+  static Future<void> uploadCapturedImages(List<String> imagePaths) async {
+    for (final imagePath in imagePaths) {
+      final file = File(imagePath);
+      final base64Image = await ImageCaptureService.imageToBase64(file);
+      final metadata = ImageCaptureService.getImageMetadata(imagePath);
+      
+      if (base64Image != null && metadata != null) {
+        await _uploadToBackend({
+          'image': base64Image,
+          'rule': metadata['rule'],
+          'timestamp': metadata['timestamp'],
+          'mimeType': 'image/jpeg',
+        });
+      }
+    }
+  }
+  
+  // Upload single image with multipart form data
+  static Future<void> uploadImageFile(File imageFile, String rule) async {
+    final request = http.MultipartRequest('POST', Uri.parse('your-api-endpoint'));
+    request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+    request.fields['rule'] = rule;
+    request.fields['timestamp'] = DateTime.now().millisecondsSinceEpoch.toString();
+    
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      print('Image uploaded successfully');
+    }
+  }
+  
+  static Future<void> _uploadToBackend(Map<String, dynamic> data) async {
+    // Your backend upload logic here
+    final response = await http.post(
+      Uri.parse('your-api-endpoint'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+    
+    if (response.statusCode == 200) {
+      print('Image uploaded successfully');
+    }
+  }
+}
+```
+
+### Image Storage Locations
+
+**Default Storage:**
+- **iOS**: `~/Documents/face_detection_captures/`
+- **Android**: `/storage/emulated/0/Android/data/your.package.name/files/Documents/face_detection_captures/`
+- **Web**: Browser's download folder (when using custom directory)
+
+**Custom Directory:**
+```dart
+FaceDetectorView(
+  enableImageCapture: true,
+  imageCaptureDirectory: '/custom/path/to/images', // Custom storage location
+  onImageCaptured: (imagePath, rule) {
+    // Handle captured image
+  },
+)
+```
+
+### Image File Naming Convention
+
+Images are automatically named with the following pattern:
+```
+{rule_name}_{timestamp}.jpg
+```
+
+Examples:
+- `smile_1703123456789.jpg`
+- `blink_1703123456790.jpg`
+- `tilt_up_1703123456791.jpg`
 
 ### Available Rules
 

@@ -56,7 +56,7 @@ class FaceDetectorView extends StatefulWidget {
       this.backgroundColor = Colors.white,
       this.contextPadding,
       this.cameraSize = const Size(200, 200),
-      this.pauseDurationInSeconds = 1,
+      this.pauseDurationInSeconds = 4,
       this.enableImageCapture = false,
       this.imageCaptureDirectory,
       this.onImageCaptured,
@@ -218,10 +218,8 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
 
   startRandomizedTime(Face face) {
     if (ruleset.value.isEmpty) {
-      widget.onSuccessValidation?.call(true);
+      // All rules completed - let developers handle success state
       return;
-    } else {
-      widget.onSuccessValidation?.call(false);
     }
 
     var currentRuleset = ruleset.value.removeAt(0);
