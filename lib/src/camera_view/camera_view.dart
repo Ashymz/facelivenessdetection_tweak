@@ -24,10 +24,10 @@ class CameraView extends StatefulWidget {
   final void Function(CameraController controller)? onController;
 
   @override
-  State<CameraView> createState() => _CameraViewState();
+  State<CameraView> createState() => CameraViewState();
 }
 
-class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
+class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   static List<CameraDescription> _cameras = [];
   CameraController? _controller;
   int _cameraIndex = -1;
@@ -163,6 +163,22 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     await _controller?.stopImageStream();
     await _controller?.dispose();
     _controller = null;
+  }
+
+  /// Captures an image from the camera and returns it as Uint8List
+  Future<Uint8List?> captureImage() async {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return null;
+    }
+
+    try {
+      final XFile image = await _controller!.takePicture();
+      final Uint8List imageBytes = await image.readAsBytes();
+      return imageBytes;
+    } catch (e) {
+      debugPrint('Error capturing image: $e');
+      return null;
+    }
   }
 
   void _processCameraImage(CameraImage image) {

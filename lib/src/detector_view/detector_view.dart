@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:facelivenessdetection/src/camera_view/camera_view.dart';
 import 'package:flutter/material.dart';
@@ -26,13 +27,16 @@ class DetectorView extends StatefulWidget {
   final void Function(CameraController controller)? onController;
 
   @override
-  State<DetectorView> createState() => _DetectorViewState();
+  State<DetectorView> createState() => DetectorViewState();
 }
 
-class _DetectorViewState extends State<DetectorView> {
+class DetectorViewState extends State<DetectorView> {
+  final GlobalKey<CameraViewState> _cameraViewKey = GlobalKey<CameraViewState>();
+
   @override
   Widget build(BuildContext context) {
     return CameraView(
+      key: _cameraViewKey,
       cameraSize: widget.cameraSize,
       onController: widget.onController,
       onImage: (image) {
@@ -42,5 +46,10 @@ class _DetectorViewState extends State<DetectorView> {
       initialCameraLensDirection: widget.initialCameraLensDirection,
       onCameraLensDirectionChanged: widget.onCameraLensDirectionChanged,
     );
+  }
+
+  /// Captures an image from the camera
+  Future<Uint8List?> captureImage() async {
+    return await _cameraViewKey.currentState?.captureImage();
   }
 }

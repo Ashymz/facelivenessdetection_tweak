@@ -18,9 +18,9 @@ class DottedCirclePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double spacingOffset = dotRadius * 2; // Extra spacing for green dots
+    // Draw dots just outside the camera circle so they appear around it
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (min(size.width, size.height) / 2) + spacingOffset;
+    final radius = (min(size.width, size.height) / 2) + dotRadius;
 
     final Paint dotPaint = Paint()..style = PaintingStyle.fill;
 
@@ -35,10 +35,10 @@ class DottedCirclePainter extends CustomPainter {
       double y = center.dy + radius * sin(currentAngle);
 
       if (i < greenDotsCount) {
-        dotPaint.color = activeProgressColor ?? Colors.green;
+        dotPaint.color = activeProgressColor ?? Colors.red;
         canvas.drawCircle(Offset(x, y), dotRadius + 1.5, dotPaint);
       } else {
-        dotPaint.color = progressColor ?? Colors.red;
+        dotPaint.color = progressColor ?? Colors.green;
         canvas.drawCircle(Offset(x, y), dotRadius, dotPaint);
       }
 
